@@ -1,152 +1,111 @@
-// widget.js - carregado via GitHub Pages
+// === CONFIGURAÇÕES ===
+const PROXY_URL = "https://SEU-PROJETO.vercel.app/api/chat"; // troque pelo link do seu projeto no Vercel
 
-if (window.__llama_bookmarklet_installed) {
-  const w = document.getElementById("llama-widget-root");
-  if (w) {
-    w.style.display = (w.style.display === "none") ? "block" : "none";
-  }
-} else {
-  window.__llama_bookmarklet_installed = true;
+// === CRIAÇÃO DO WIDGET ===
+(function () {
+  let widget, textarea, messages;
 
-  // === estilos do widget ===
-  const style = document.createElement("style");
-  style.textContent = `
-    #llama-widget-root {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      width: 320px;
-      height: 420px;
-      background: #fff;
-      border: 1px solid #ccc;
-      border-radius: 10px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-      display: flex;
-      flex-direction: column;
-      font-family: Arial, sans-serif;
-      z-index: 999999;
-    }
-    #llama-widget-header {
-      background: #4a90e2;
-      color: #fff;
-      padding: 8px;
-      font-size: 14px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-radius: 10px 10px 0 0;
-    }
-    #llama-widget-close {
-      cursor: pointer;
-      font-weight: bold;
-    }
-    #llama-widget-messages {
-      flex: 1;
-      padding: 8px;
-      overflow-y: auto;
-      font-size: 13px;
-      line-height: 1.4;
-    }
-    .llama-msg {
-      margin-bottom: 6px;
-    }
-    .llama-user {
-      color: #2c3e50;
-      font-weight: bold;
-    }
-    .llama-bot {
-      color: #27ae60;
-    }
-    #llama-widget-input {
-      display: flex;
-      border-top: 1px solid #ccc;
-    }
-    #llama-widget-input textarea {
-      flex: 1;
-      border: none;
-      padding: 6px;
-      resize: none;
-      font-size: 13px;
-      outline: none;
-    }
-    #llama-widget-input button {
-      background: #4a90e2;
-      color: white;
-      border: none;
-      padding: 0 12px;
-      cursor: pointer;
-    }
-  `;
-  document.head.appendChild(style);
+  function createWidget() {
+    widget = document.createElement("div");
+    widget.id = "chat-widget";
+    widget.style.position = "fixed";
+    widget.style.bottom = "20px";
+    widget.style.right = "20px";
+    widget.style.width = "350px";
+    widget.style.height = "400px";
+    widget.style.background = "white";
+    widget.style.border = "1px solid #ccc";
+    widget.style.borderRadius = "10px";
+    widget.style.display = "flex";
+    widget.style.flexDirection = "column";
+    widget.style.zIndex = "9999";
+    widget.style.fontFamily = "sans-serif";
+    widget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.2)";
 
-  // === estrutura do widget ===
-  const root = document.createElement("div");
-  root.id = "llama-widget-root";
-  root.innerHTML = `
-    <div id="llama-widget-header">
-      <span>LLaMA Chat</span>
-      <span id="llama-widget-close">×</span>
-    </div>
-    <div id="llama-widget-messages"></div>
-    <div id="llama-widget-input">
-      <textarea rows="1" placeholder="Digite..."></textarea>
-      <button>➤</button>
-    </div>
-  `;
-  document.body.appendChild(root);
+    // Área de mensagens
+    messages = document.createElement("div");
+    messages.style.flex = "1";
+    messages.style.padding = "10px";
+    messages.style.overflowY = "auto";
+    messages.style.fontSize = "14px";
+    widget.appendChild(messages);
 
-  const closeBtn = root.querySelector("#llama-widget-close");
-  const messages = root.querySelector("#llama-widget-messages");
-  const textarea = root.querySelector("textarea");
-  const sendBtn = root.querySelector("button");
+    // Área de input
+    const inputArea = document.createElement("div");
+    inputArea.style.display = "flex";
+    inputArea.style.borderTop = "1px solid #ccc";
 
-  // fechar com botão
-  closeBtn.addEventListener("click", () => {
-    root.style.display = "none";
-  });
+    textarea = document.createElement("textarea");
+    textarea.style.flex = "1";
+    textarea.style.border = "none";
+    textarea.style.padding = "10px";
+    textarea.style.fontSize = "14px";
+    textarea.style.resize = "none";
+    textarea.rows = 2;
+    inputArea.appendChild(textarea);
 
-  // função para adicionar mensagens
-  function addMessage(text, sender = "bot") {
-    const div = document.createElement("div");
-    div.className = "llama-msg " + (sender === "user" ? "llama-user" : "llama-bot");
-    div.textContent = (sender === "user" ? "Você: " : "Bot: ") + text;
-    messages.appendChild(div);
-    messages.scrollTop = messages.scrollHeight;
+    const sendBtn = document.createElement("button");
+    sendBtn.textContent = "➤";
+    sendBtn.style.border = "none";
+    sendBtn.style.background = "#007bff";
+    sendBtn.style.color = "white";
+    sendBtn.style.padding = "0 15px";
+    sendBtn.style.cursor = "pointer";
+    inputArea.appendChild(sendBtn);
+
+    sendBtn.addEventListener("click", sendMessage);
+    textarea.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    widget.appendChild(inputArea);
+    document.body.appendChild(widget);
   }
 
-  // função de envio
   async function sendMessage() {
     const text = textarea.value.trim();
     if (!text) return;
-    addMessage(text, "user");
+
+    addMessage("Você", text);
     textarea.value = "";
 
-    // aqui é onde você chama seu proxy/meta api
     try {
-      const reply = await fakeReply(text);
-      addMessage(reply, "bot");
+      const res = await fetch(PROXY_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text }),
+      });
+
+      const data = await res.json();
+      const reply = data.choices?.[0]?.message?.content || "❌ Erro na resposta";
+      addMessage("Bot", reply);
     } catch (err) {
-      addMessage("Erro: " + err.message, "bot");
+      console.error(err);
+      addMessage("Bot", "❌ Erro de conexão com o servidor");
     }
   }
 
-  // simulação de resposta (troque pelo fetch ao seu proxy)
-  async function fakeReply(prompt) {
-    return "Eco: " + prompt;
+  function addMessage(sender, text) {
+    const msg = document.createElement("div");
+    msg.style.margin = "5px 0";
+    msg.innerHTML = `<strong>${sender}:</strong> ${text}`;
+    messages.appendChild(msg);
+    messages.scrollTop = messages.scrollHeight;
   }
 
-  sendBtn.addEventListener("click", sendMessage);
-  textarea.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  });
-
-  // toggle com a tecla '
+  // Atalho para abrir/fechar com a tecla '
   document.addEventListener("keydown", (e) => {
-    if (e.key === "'" && !e.target.closest("input, textarea, [contenteditable=true]")) {
-      root.style.display = (root.style.display === "none") ? "block" : "none";
+    if (e.key === "'") {
+      if (widget && widget.style.display !== "none") {
+        widget.style.display = "none";
+      } else if (widget) {
+        widget.style.display = "flex";
+      } else {
+        createWidget();
+      }
     }
   });
-}
+})();
