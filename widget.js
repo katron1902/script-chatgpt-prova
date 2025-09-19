@@ -1,5 +1,5 @@
 // === CONFIGURAÇÕES ===
-const PROXY_URL = "https://SEU-PROJETO.vercel.app/api/chat"; // troque pelo link do seu projeto no Vercel
+const PROXY_URL = "https://script-chatgpt-prova-h3c5.vercel.app/api/chat";
 
 // === CRIAÇÃO DO WIDGET ===
 (function () {
