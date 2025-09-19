@@ -1,6 +1,6 @@
 export default async function handler(req, res) {
-  // Permitir qualquer origem (ou troque pelo seu domínio específico)
-  res.setHeader("Access-Control-Allow-Origin", "*");
+  // === CONFIGURAÇÃO CORS ===
+  res.setHeader("Access-Control-Allow-Origin", "https://saladofuturo.educacao.sp.gov.br");
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
@@ -9,6 +9,7 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
+  // Só aceita POST
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Método não permitido" });
   }
@@ -16,11 +17,12 @@ export default async function handler(req, res) {
   try {
     const { message } = req.body;
 
+    // Chamada para a Meta AI (Llama 4)
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.META_API_KEY}`,
+        "Authorization": `Bearer ${process.env.META_API_KEY}`, // variável de ambiente no Vercel
       },
       body: JSON.stringify({
         model: "llama-4",
